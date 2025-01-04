@@ -588,4 +588,3 @@ class Patient_data_generator(keras.utils.Sequence):
 #    break
     
     
-
