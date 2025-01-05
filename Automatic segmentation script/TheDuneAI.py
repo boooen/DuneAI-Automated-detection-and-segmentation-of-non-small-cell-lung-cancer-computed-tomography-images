@@ -66,26 +66,34 @@ class ContourPilot:
     
     def segment(self):
         if self.model1 and self.Patient_dict and self.Output_path:
-            count=0
-            for img,_,filename,params in tqdm(self.Patients_gen, desc='Progress'):
-
-                filename=filename[0]
-                params=params[0]
+            count = 0
+            for img, _, filename, params in tqdm(self.Patients_gen, desc='Progress'):
+                filename = filename[0]
+                params = params[0]
                 img = np.squeeze(img)
 
-                predicted_array = self.__generate_segmentation__(img,params)
+                predicted_array = self.__generate_segmentation__(img, params)
 
-                if not os.path.exists(os.path.join(self.Output_path,filename.split('\\')[-2]+'_(DL)')):
-                    os.makedirs(os.path.join(self.Output_path,filename.split('\\')[-2]+'_(DL)'))   
-                
+                # 获取输入文件所在目录
+                output_dir = os.path.dirname(filename)
+
+                # 检查并创建输出目录（如果不存在）
+                # if not os.path.exists(output_dir):
+                #     os.makedirs(output_dir)
+
+                # 这段也不需要了
+                # if not os.path.exists(os.path.join(self.Output_path,filename.split('\\')[-2]+'_(DL)')):
+                #     os.makedirs(os.path.join(self.Output_path,filename.split('\\')[-2]+'_(DL)'))   
+
                 generated_img = sitk.GetImageFromArray(predicted_array)
                 generated_img.SetSpacing(params['original_spacing'])
                 generated_img.SetOrigin(params['img_origin'])
-                sitk.WriteImage(generated_img,os.path.join(self.Output_path,filename.split('\\')[-2]+'_(DL)','DL_mask.nrrd')) 
-                temp_data=sitk.ReadImage(filename)
-                sitk.WriteImage(temp_data,os.path.join(self.Output_path,filename.split('\\')[-2]+'_(DL)','image.nrrd'))
+
+                # 直接将输出文件名设置为 DL_mask.nrrd
+                output_filename = os.path.join(output_dir, 'DL_mask.nrrd')
+                sitk.WriteImage(generated_img, output_filename)
 
                 if count == len(self.Patients_gen):
                     return 0
 
-                count+=1
+                count += 1
