@@ -30,7 +30,7 @@ def get_kernel():
     return kernel
 
 def find_bounds_z_direction(image):
-    z_dist = np.sum(image,axis = (1,2))     
+    z_dist = np.sum(image,axis = (1,2))
     zi = np.where(z_dist!=0)
     min_bound = np.min(zi)
     max_bound = np.max(zi)
@@ -47,9 +47,9 @@ def resize_3d_img(img,shape,interp = cv2.INTER_NEAREST):
     temp_img = np.zeros((init_img.shape[0],shape[1],shape[2]))
     new_img = np.zeros(shape)
     for i in range(0,init_img.shape[0]):
-        temp_img[i,...] = cv2.resize(init_img[i,...],dsize=(shape[2],shape[1]),interpolation = interp)   
+        temp_img[i,...] = cv2.resize(init_img[i,...],dsize=(shape[2],shape[1]),interpolation = interp)
     for j in range(0,temp_img.shape[1]):
-        new_img[:,j,:] = (cv2.resize(temp_img[:,j,:],dsize=(shape[2],shape[0]),interpolation = interp)) 
+        new_img[:,j,:] = (cv2.resize(temp_img[:,j,:],dsize=(shape[2],shape[0]),interpolation = interp))
     return new_img
 
 def create_flipped_mask(image,i_orig,kernel,method=0):   #image is a lung mask image, i_orig is an image volume
@@ -58,9 +58,9 @@ def create_flipped_mask(image,i_orig,kernel,method=0):   #image is a lung mask i
     lc_buff=[]
     alpha = 0.3
     lungs_center_ind ={}
-    
+
     if method:
-    ## With adjustment for spine senter irregularity
+        ## With adjustment for spine senter irregularity
         st_pt=[]
         lc_buff =[]
         for i in range(min_bound,min_bound+5):
@@ -73,8 +73,8 @@ def create_flipped_mask(image,i_orig,kernel,method=0):   #image is a lung mask i
             distr_indicies = np.where(distr > (thresh_l1*0.15))
             lungs_center = int(rib_view.shape[0]/2-c_limit)+np.where(filtered_distr[int(rib_view.shape[0]/2-c_limit):int(rib_view.shape[0]/2+c_limit)] == np.max(filtered_distr[int(rib_view.shape[0]/2-c_limit):int(rib_view.shape[0]/2+c_limit)]))[0][0]
             st_pt.append(lungs_center)
-            
-        s0 = np.mean(st_pt)  
+
+        s0 = np.mean(st_pt)
         for i in range(min_bound,max_bound+1):
             rib_view = 1*(i_orig[i,...] > 100)
             rib_view[370:,:] = 0
@@ -88,9 +88,9 @@ def create_flipped_mask(image,i_orig,kernel,method=0):   #image is a lung mask i
             print(lungs_center)
             lungs_center_ind[i] = int((alpha*lungs_center)+(1-alpha)*s0)
             s0 = lungs_center
-        
+
     else:
-    ## quick method no adjustment
+        ## quick method no adjustment
         for i in range(min_bound,max_bound+1):
             rib_view = 1*(i_orig[i,...]>100)
             distr = np.sum(rib_view,axis=0)
@@ -99,9 +99,9 @@ def create_flipped_mask(image,i_orig,kernel,method=0):   #image is a lung mask i
             lc_buff.append((np.min(distr_indicies)+np.max(distr_indicies))/2)
         lungs_center = int(np.mean(lc_buff))
         for i in range(min_bound,max_bound+1):
-            lungs_center_ind[i] = lungs_center    
-        
-        
+            lungs_center_ind[i] = lungs_center
+
+
     for i in range(min_bound,max_bound+1):
         ax = image[i,...]
         if lungs_center_ind[i] > int(image.shape[2]/2):
@@ -123,9 +123,9 @@ def create_flipped_mask(image,i_orig,kernel,method=0):   #image is a lung mask i
         else:
             fl = np.flip(ax,axis=1)
             fl_mask[i,...] = np.array(ax,np.uint8)|np.array(fl,np.uint8)
-        
+
     return fl_mask,min_bound,max_bound
-    
+
 
 def largest_labeled_volumes(im, bg=-1,ratio=0.6):
     vals, counts = np.unique(im, return_counts=True)
@@ -140,17 +140,17 @@ def largest_labeled_volumes(im, bg=-1,ratio=0.6):
             smax = np.where(counts == (counts[((counts>ratio)*(counts<1))]))[0][0]
 
             return vals[[np.argmax(counts),smax]]
-        except:   
+        except:
             return [vals[np.argmax(counts)]]
     else:
         return None
-    
+
 def max_connected_volume_extraction(image):
     #image should be int
     img_buff = image.copy()
     img_buff_lb = image.copy()
     img_buff = 1*(img_buff>0)
-    img_buff_lb = np.array(img_buff_lb*10,np.uint8) 
+    img_buff_lb = np.array(img_buff_lb*10,np.uint8)
     output_mask = np.zeros_like(img_buff)
     connectivity_array = np.zeros_like(img_buff)
     label_image = label(img_buff_lb)
@@ -161,7 +161,7 @@ def max_connected_volume_extraction(image):
         elif i == len(img_buff)-1:
             connectivity_array[i,...] = img_buff[i,...]&img_buff[i-1,...]
         else:
-            connectivity_array[i,...] = (img_buff[i-1,...]&img_buff[i,...])|(img_buff[i+1,...]&img_buff[i,...]) 
+            connectivity_array[i,...] = (img_buff[i-1,...]&img_buff[i,...])|(img_buff[i+1,...]&img_buff[i,...])
 
     multip_arr = label_image*connectivity_array
     areas = list(np.unique(multip_arr[multip_arr>0]))
@@ -188,41 +188,41 @@ def max_connected_volume_extraction(image):
         output_mask[label_image==val]=1
     return output_mask
 
-    
+
 def get_seg_lungs(img,return_only_mask= True):
     im = img.copy()
     kernel = get_kernel()
     # Convert into a binary image. 
-    binary = (im < -320) 
-    
+    binary = (im < -320)
+
     sq = img.shape[1]*img.shape[2]
     seg_lung =np.zeros_like(img)
-    
-    
+
+
     for nm,ax_slice in enumerate(binary):
-    
+
         # Remove the blobs connected to the border of the image
         cleared = clear_border(ax_slice)
         # Label the image
         label_image = label(cleared)
-        
+
         # Keep the labels with 3 largest areas
         areas = [r.area for r in regionprops(label_image)]
         areas.sort()
         if len(areas) > 3:
             for region in regionprops(label_image):
                 if region.area < areas[-3]:
-                    for coordinates in region.coords:                
-                           label_image[coordinates[0], coordinates[1]] = 0
+                    for coordinates in region.coords:
+                        label_image[coordinates[0], coordinates[1]] = 0
         binary_sl = label_image > 0
-        
-        
+
+
         # Fill in the small holes inside the lungs
         edges = roberts(binary_sl)
         binary_sl = ndi.binary_fill_holes(edges)
         seg_lung[nm,...] = binary_sl
-        
-    
+
+
     for i,axial_slice in enumerate(seg_lung):   #Delete Trahea from mask 
         trahea_coeff = 0.0053*(sq/(512**2))
         trahea_coeff = 0.0069*(sq/(512**2)) #sebast
@@ -235,9 +235,9 @@ def get_seg_lungs(img,return_only_mask= True):
             for l in vals[counts/(sq*1) < trahea_coeff]:
                 labels[labels == l] = 0
             labels = labels != 0
-            seg_lung[i,...] = labels  
-                
-    # Remove table and other air pockets insided body
+            seg_lung[i,...] = labels
+
+            # Remove table and other air pockets insided body
     labels = measure.label(seg_lung, background=0)
 
     for i in np.unique(labels):
@@ -245,7 +245,7 @@ def get_seg_lungs(img,return_only_mask= True):
         if temp_center> seg_lung.shape[1]*0.75:
             seg_lung[labels==i]=0
 
-    labels = measure.label(seg_lung, background=0)        
+    labels = measure.label(seg_lung, background=0)
     l_max = largest_labeled_volumes(labels, bg=0)
     if l_max is not None: # There are air pockets
         if len(l_max)>1:
@@ -253,19 +253,19 @@ def get_seg_lungs(img,return_only_mask= True):
             seg_lung[labels != l_max[0]] = 0
 
         else:
-             seg_lung[labels != l_max[0]] = 0
-            
-    
+            seg_lung[labels != l_max[0]] = 0
+
+
     # Searching for lungs center and flip the lungs
     seg_lung,min_bound,max_bound = create_flipped_mask(seg_lung,im,kernel)
-           
+
 
     for i,axial_slice in enumerate(seg_lung):
         bi=np.array((axial_slice),np.uint8)
         opening = cv2.morphologyEx((1-bi),cv2.MORPH_OPEN,kernel,iterations=7)
         dilat = cv2.dilate((1-opening),kernel,iterations=2)
         seg_lung[i,...] = cv2.erode(dilat,kernel,iterations=1)
-        
+
     #Stretch the lung mask in z direction +-2 slices
     if (min_bound>2)and (max_bound<seg_lung.shape[0]-2):
         try:
@@ -281,12 +281,12 @@ def get_seg_lungs(img,return_only_mask= True):
         return seg_lung
     else:
         return seg_lung,min_bound,max_bound
-   
-    
+
+
 def apply_mask(image,mask,threshold=-1000): #apply mask to image and save HU values
     new_img = image.copy()
     new_img[np.where(mask==0)] = threshold
-    
+
     return new_img
 
 def parse_dataset(general_path,img_only = True):
@@ -295,7 +295,7 @@ def parse_dataset(general_path,img_only = True):
     temp_img=''
     temp_mask=''
     i=0
-    
+
     for patient in tqdm(patients):
         for root, dirs, files in os.walk(os.path.join(general_path,patient)):
             for file in files:
@@ -310,13 +310,13 @@ def parse_dataset(general_path,img_only = True):
                                 temp_mask=''
                                 temp_img=''
                 else:
-                    
+
                     if re.search('volume',file.lower()) or re.search('image',file.lower()):
                         temp_img = file
                         Patient_dict[i]=[os.path.join(general_path,patient,temp_img)]
                         i+=1
                         temp_img=''
-                
+
     print(len(Patient_dict),r' Patients found')
     return Patient_dict
                 
