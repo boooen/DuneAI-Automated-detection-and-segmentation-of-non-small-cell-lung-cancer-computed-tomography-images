@@ -19,7 +19,7 @@ def combined_loss(y_true, y_pred, alpha=0.7):
     dsc = dice_loss(y_true, y_pred)
     return alpha * dsc + (1 - alpha) * bce
 
-# Cosine Annealing Learning Rate Scheduler
+# Cosine Annealing Learning Rate Scheduler 学习率调度器
 def cosine_annealing_scheduler(epoch, lr):
     initial_lr = 0.001  # Initial learning rate
     max_epochs = 300    # Total number of epochs
@@ -47,13 +47,14 @@ def train_model(model, train_generator, validation_generator, epochs=300, initia
     checkpoint = ModelCheckpoint(
         filepath='best_model.h5',  # Save as .hdf5 format
         monitor='val_dice_coefficient',  # Monitor DSC on validation set
-        save_best_only=True,
+        save_best_only=True, # 设置为 True 表示只有当 monitor 指定的指标比之前更好时，才会保存模型权重。
         mode='max',  # Save the model with the highest DSC
         verbose=1,
         save_weights_only=True  # Save only the model weights
     )
 
     # Compile the model with the combined loss function
+    # 虽然编译时使用Adam优化器，实际上由于回调函数中的处理，学习率调整器用的是 LearningRateScheduler(cosine_annealing_scheduler)
     model.compile(optimizer=Adam(learning_rate=initial_lr), loss=combined_loss, metrics=[dice_coefficient])
 
     # Train the model
